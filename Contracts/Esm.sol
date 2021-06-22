@@ -1,14 +1,14 @@
-// SPDX-License-Identifier: MIT
-pragma solidity >=0.5.0 <=0.7.0;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity >=0.5.0 <0.7.0;
 
-import "./Owned.sol";
-import "./WhiteList.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./Whitelist.sol";
 
 interface ITokenStake {
     function updateIndex() external;
 }
 
-contract Esm is Owned, WhiteList {
+contract Esm is Whitelist {
     /// @notice Access stake pause
     uint256 public stakeLive = 1;
     /// @notice Access redeem pause
@@ -24,41 +24,42 @@ contract Esm is Owned, WhiteList {
     /**
      * @notice Construct a new Esm
      */
-    constructor() public Owned(msg.sender) {}
+    constructor() public {}
+
 
     /**
      * @notice Set with tokenStake
      * @param _tokenStake Address of tokenStake
      */
-    function setupTokenStake(address _tokenStake) public onlyWhiter {
+    function setupTokenStake(address _tokenStake) public onlyWhitelisted {
         tokenStake = ITokenStake(_tokenStake);
     }
 
     /**
      * @notice Open stake, if stake pasued
      */
-    function openStake() external onlyWhiter {
+    function openStake() external onlyWhitelisted {
         stakeLive = 1;
     }
 
     /**
      * @notice Paused stake, if stake opened
      */
-    function pauseStake() external onlyWhiter {
+    function pauseStake() external onlyWhitelisted {
         stakeLive = 0;
     }
 
     /**
      * @notice Open redeem, if redeem paused
      */
-    function openRedeem() external onlyWhiter {
+    function openRedeem() external onlyWhitelisted {
         redeemLive = 1;
     }
 
     /**
      * @notice Pause redeem, if redeem opened
      */
-    function pauseRedeem() external onlyWhiter {
+    function pauseRedeem() external onlyWhitelisted {
         redeemLive = 0;
     }
 
@@ -87,7 +88,7 @@ contract Esm is Owned, WhiteList {
      * @notice If anything error, project manager can shutdown it
      *         anybody cant stake, but can redeem
      */
-    function shutdown() external onlyWhiter {
+    function shutdown() external onlyWhitelisted {
         require(time == 0, "System closed yet.");
         tokenStake.updateIndex();
         time = block.timestamp;

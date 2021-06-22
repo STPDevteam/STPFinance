@@ -1,69 +1,49 @@
-// SPDX-License-Identifier: MIT
-pragma solidity >=0.5.0 <0.8.0;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity >=0.5.0 <0.7.0;
 
-import "./Owned.sol";
 
-contract WhiteList is Owned {
-    /// @notice Users with permissions
-    mapping(address => uint256) public whiter;
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-    /// @notice Append address into whiteList successevent
-    event AppendWhiter(address adder);
+abstract contract Whitelist is Ownable {
 
-    /// @notice Remove address into whiteList successevent
-    event RemoveWhiter(address remover);
+    mapping(address => bool) public whitelist;
+    address[] public whitelistedAddresses;
 
-    /**
-     * @notice Construct a new WhiteList, default owner in whiteList
-     */
-    constructor() internal {
-        appendWhiter(owner);
-    }
+    event AddedToWhitelist(address[] indexed accounts);
+    event RemovedFromWhitelist(address indexed account);
 
-    modifier onlyWhiter() {
-        require(isWhiter(), "WhiteList: msg.sender not in whilteList.");
+    modifier onlyWhitelisted() {
+        require(isWhitelisted(msg.sender), 'not in whitelist');
         _;
     }
 
-    /**
-     * @notice Only onwer can append address into whitelist
-     * @param account The address not added, can added to the whitelist
-     */
-    function appendWhiter(address account) public onlyOwner {
-        require(account != address(0), "WhiteList: address not zero");
-        require(
-            !isWhiter(account),
-            "WhiteListe: the account exsit whilteList yet"
-        );
-        whiter[account] = 1;
-        emit AppendWhiter(account);
+    constructor () public {
+        // default owner in Whitelist
+        whitelistedAddresses = [owner()];
+        whitelist[owner()] = true;
     }
 
-    /**
-     * @notice Only onwer can remove address into whitelist
-     * @param account The address in whitelist yet
-     */
-    function removeWhiter(address account) public onlyOwner {
-        require(
-            isWhiter(account),
-            "WhiteListe: the account not exist whilteList"
-        );
-        delete whiter[account];
-        emit RemoveWhiter(account);
+    function addWhite(address[] memory _addresses) public onlyOwner {
+        for (uint i = 0; i < _addresses.length; i++) {
+            require(whitelist[_addresses[i]] != true);
+            whitelist[_addresses[i]] = true;
+            whitelistedAddresses.push(_addresses[i]);
+        }
+        emit AddedToWhitelist(_addresses);
     }
 
-    /**
-     * @notice Check whether acccount in whitelist
-     * @param account Any address
-     */
-    function isWhiter(address account) public view returns (bool) {
-        return whiter[account] == 1;
+    function removeWhite(address _address, uint256 _index) public onlyOwner {
+        require(_address == whitelistedAddresses[_index]);
+        whitelist[_address] = false;
+        delete whitelistedAddresses[_index];
+        emit RemovedFromWhitelist(_address);
     }
 
-    /**
-     * @notice Check whether msg.sender in whitelist overrides.
-     */
-    function isWhiter() public view returns (bool) {
-        return isWhiter(msg.sender);
+    function getWhitelistedAddresses() public view returns(address[] memory) {
+        return whitelistedAddresses;
+    }
+
+    function isWhitelisted(address _address) public view returns(bool) {
+        return whitelist[_address];
     }
 }

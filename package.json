@@ -1,0 +1,34 @@
+{
+  "name": "rai-dao-contract",
+  "version": "1.0.0",
+  "description": "Right now the contract file is only a beta version of BATE",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx hardhat compile && npx hardhat test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RaiFinance/rai-dao-contract.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RaiFinance/rai-dao-contract/issues"
+  },
+  "homepage": "https://github.com/RaiFinance/rai-dao-contract#readme",
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-web3": "^2.0.0",
+    "@openzeppelin/test-environment": "^0.1.9",
+    "@openzeppelin/test-helpers": "^0.5.10",
+    "@openzeppelin/contracts": "^3.4.0",
+    "chai": "^4.3.4",
+    "ethers": "^5.1.0",
+    "hardhat": "^2.1.2",
+    "web3": "^1.3.5"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^3.4.0",
+    "ethereum-waffle": "^3.3.0"
+  }
+}
