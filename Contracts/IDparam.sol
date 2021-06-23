@@ -26,9 +26,13 @@ interface IDparam {
 
     function feeRate() external view returns (uint256);
 
+    function feeAddress() external view returns (address);
+
     function minMint() external view returns (uint256);
 
     function setFeeRate(uint256 _feeRate) external;
+
+    function setFeeAddress(address _feeAddress) external;
     
     function setStakeRate(uint256 _stakeRate) external;
 

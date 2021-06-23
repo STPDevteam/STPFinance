@@ -25,6 +25,7 @@ describe('Test Stake', function () {
     coin = await this.Stable.deploy("USDSP", "USDP", 6);
     coin = await coin.deployed();
     coin_decimals = await coin.decimals();
+    coin_name = await coin.name();
     ONE_COIN = BigNumber.from(10).pow(coin_decimals);
     console.log('stable coin adddress', coin.address);
 
@@ -32,6 +33,7 @@ describe('Test Stake', function () {
     token = await this.SimpleERC20.deploy("STPT", "STPT", 18, BigNumber.from(1000000).mul(BigNumber.from(10).pow(18)))
     token = await token.deployed();
     token_decimals = await token.decimals();
+    token_name = await token.name()
     ONE_TOKEN = BigNumber.from(10).pow(token_decimals);
     console.log('token adddress', token.address);
 
@@ -47,9 +49,10 @@ describe('Test Stake', function () {
     console.log('dparam_address', dparam.address)
 
     // deploy oracle
-    oracle = await this.Oracle.deploy(esm.address, dparam.address);
+    oracle = await this.Oracle.deploy(esm.address, dparam.address, token_name + '-' + coin_name);
     oracle = await oracle.deployed();
-    console.log('oracle_address', oracle.address)
+    oracle_name = await oracle.name()
+    console.log('oracle_address', oracle_name, oracle.address)
     
     // deploy stake
     stake = await this.Stake.deploy(esm.address, dparam.address, oracle.address);
@@ -59,8 +62,6 @@ describe('Test Stake', function () {
 
 
     // Setup contract
-    // Setup stake address in esm
-    await esm.setupTokenStake(stake.address)
 
     // Setup stake token && coin
     await stake.setup(token.address, coin.address)
@@ -72,31 +73,35 @@ describe('Test Stake', function () {
 
     await esm.addWhite([oracle.address,]);
 
-    // Oracle poke price  token/usdt
-    await oracle.poke(10000);
+    // when price meet lowstPrice, system will shut down.
+    const currentPrice = 0.028 * ONE_COIN
+    const stakeRate = 7 * ONE_COIN / currentPrice
+    const lowestPrice = 1.5 / stakeRate
+    console.log('lowestPrice shutdown', lowestPrice)
+    await dparam.setStakeRate(currentPrice)
 
     await dparam.setFeeRate(1)
 
   });
 
 
-
-  // it('stake should failed when coinAmount less than minMint', async function () {
-  //   await expect(stake.stake(100)).to.revertedWith("First make coin must grater than 100.");
-  // });
-
-
   it('stake should succeed', async function () {
+    // Oracle poke price  token/usdp
+    await oracle.poke(0.02 * ONE_COIN);
+
     // await token.approve(stake.address)
     coinAmout = ONE_COIN * 100
     tokenAmount = await stake.getInputToken(coinAmout)
     await token.approve(stake.address, tokenAmount)
     await stake.connect(owner).stake(coinAmout)
     expect((await coin.balanceOf(owner.address)).toString()).to.equal(coinAmout.toString())
-
-    result = await stake.debtOf(owner.address)
-    console.log(result)
+    await stake.connect(owner).redeem(coinAmout)
   });
 
+
+  it('system shold shutdown when price too low', async function () {
+    await oracle.poke(0.005 * ONE_COIN);
+    expect(await esm.isClosed()).to.equal(true)
+  });
 
 });

@@ -4,6 +4,7 @@ pragma solidity >=0.5.0 <0.7.0;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./Whitelist.sol";
 
+
 interface IParams {
     function isLiquidation(uint256 price) external view returns (bool);
     function cost() external view returns (uint256);
@@ -23,9 +24,8 @@ contract Oracle is Whitelist {
     uint256 public val;
     /// @dev Price update date(s)
     uint256 public time;
-
     /// @dev Oracle Name
-    bytes32 name;
+    string public name;
 
     /// @dev Oracle update success event
     event OracleUpdate(uint256 val, uint256 time);
@@ -41,25 +41,28 @@ contract Oracle is Whitelist {
      * @param _params Dynamic parameter contract address
      * @param _esm Esm parameter contract address
      */
-    constructor(address _esm, address _params) public {
+    constructor(address _esm, address _params, string memory _name) public {
         esm = IEsm(_esm);
         params = IParams(_params);
-        name = "OIN-USDO3";
+        name = _name;
     }
 
     /**
      * @dev Chain-off push price to chain-on
-     *  price = token/usds * coin_decimals
+     *  price = token/usd * coin_decimals
      *  stakeRate = cost * coin_decimals / price
-     * @param price token-usdt price decimals
+     * @param price token-usd price decimals
      */
     function poke(uint256 price) public onlyWhitelisted {
         require(!esm.isClosed(), "System closed yet.");
 
         val = price;
         time = block.timestamp;
-
-        params.setStakeRate(val);
+        if (params.isLiquidation(val)) {
+            esm.shutdown();
+        } else {
+            emit OracleUpdate(val, time);
+        }
 
         emit OracleUpdate(val, time);
     }

@@ -4,10 +4,6 @@ pragma solidity >=0.5.0 <0.7.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Whitelist.sol";
 
-interface ITokenStake {
-    function updateIndex() external;
-}
-
 contract Esm is Whitelist {
     /// @notice Access stake pause
     uint256 public stakeLive = 1;
@@ -15,8 +11,6 @@ contract Esm is Whitelist {
     uint256 public redeemLive = 1;
     /// @notice System closed time
     uint256 public time;
-    /// @notice TokenStake for updating on closed
-    ITokenStake public tokenStake;
 
     /// @notice System closed yet event
     event ShutDown(uint256 blocknumber, uint256 time);
@@ -25,15 +19,6 @@ contract Esm is Whitelist {
      * @notice Construct a new Esm
      */
     constructor() public {}
-
-
-    /**
-     * @notice Set with tokenStake
-     * @param _tokenStake Address of tokenStake
-     */
-    function setupTokenStake(address _tokenStake) public onlyWhitelisted {
-        tokenStake = ITokenStake(_tokenStake);
-    }
 
     /**
      * @notice Open stake, if stake pasued
@@ -90,7 +75,6 @@ contract Esm is Whitelist {
      */
     function shutdown() external onlyWhitelisted {
         require(time == 0, "System closed yet.");
-        tokenStake.updateIndex();
         time = block.timestamp;
         emit ShutDown(block.number, time);
     }

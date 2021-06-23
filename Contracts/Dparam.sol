@@ -4,17 +4,17 @@ pragma solidity >=0.5.0 <0.7.0;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./IDparam.sol";
 import "./Whitelist.sol";
-import "hardhat/console.sol";
 
 contract Dparam is Whitelist, IDparam {
     using SafeMath for uint256;
 
     /// @dev Initial ratio 35 token mint -> 1 coin
-    uint256 public override stakeRate = 35;
+    uint256 public override stakeRate = 250;
     /// @dev The collateral rate of liquidation
-    uint256 public override liquidationLine = 110;
+    uint256 public override liquidationLine = 150;
     /// @dev Redemption rate 0.3%
     uint256 public override feeRate = 3;
+    address public override feeAddress = 0x1111111111111111111111111111111111111111;
 
     /// @dev Minimum number of COINS for the first time
     uint256 public override one_coin = 1e6;
@@ -56,6 +56,14 @@ contract Dparam is Whitelist, IDparam {
     }
 
     /**
+     * @dev Reset feeRate
+     * @param _feeAddress New number of feeRate
+     */
+    function setFeeAddress(address _feeAddress) override external onlyWhitelisted {
+        feeAddress = _feeAddress;
+    }
+
+    /**
      * @dev Reset liquidationLine
      * @param _liquidationLine New number of liquidationLine
      */
@@ -74,13 +82,11 @@ contract Dparam is Whitelist, IDparam {
     }
 
     /**
-     * @dev Reset stakeRate for DynamicPledge
+     * @dev Reset stakeRate
      * @param price = (token/usdt) * decimals
      */
     function setStakeRate(uint256 price) override external onlyWhitelisted {
-        console.log(cost, one_coin, price);
         stakeRate = cost.mul(one_coin).div(price);
-        console.log('setStakeRate', stakeRate);
         emit StakeRateEvent(stakeRate);
     }
 
@@ -119,7 +125,7 @@ contract Dparam is Whitelist, IDparam {
      * @return Whether the clearing line has been no exceeded
      */
     function isLiquidation(uint256 price) override external view returns (bool) {
-        return price.mul(stakeRate).mul(100) <= liquidationLine.mul(one_coin);
+        return price.mul(stakeRate).mul(100) <= liquidationLine * one_coin;
     }
 
     /**
@@ -137,7 +143,6 @@ contract Dparam is Whitelist, IDparam {
      * @return The value of Checking
      */
     function isUpperLimit(uint256 totalCoin) override external view returns (bool) {
-        console.log('isUpperLimit', totalCoin, coinUpperLimit);
         return totalCoin <= coinUpperLimit;
     }
 
